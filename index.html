@@ -1,0 +1,1137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Understand MCP architecture, how AI assistants, LLMs, MCP clients and MCP servers work together, and how AI selects tools across multiple servers.">
+<title>Understanding MCP Architecture | A Complete Guide</title>
+
+<style>
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #172033;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --border: #e2e8f0;
+  --code: #101827;
+  --accent: #0f766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  line-height: 1.75;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 30px 24px 80px;
+}
+
+header {
+  padding: 65px 0 45px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tag {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(34px, 6vw, 54px);
+  line-height: 1.15;
+  letter-spacing: -1.8px;
+  margin: 20px 0;
+}
+
+.subtitle {
+  font-size: 19px;
+  color: var(--muted);
+  max-width: 750px;
+}
+
+.meta {
+  margin-top: 25px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+h2 {
+  font-size: 29px;
+  line-height: 1.3;
+  margin-top: 55px;
+  letter-spacing: -0.6px;
+}
+
+h3 {
+  font-size: 21px;
+  margin-top: 32px;
+}
+
+p {
+  margin: 17px 0;
+}
+
+a {
+  color: var(--primary);
+}
+
+strong {
+  color: #111827;
+}
+
+.component {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 22px;
+  margin: 25px 0;
+}
+
+.components {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 25px 0;
+}
+
+.component h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.component p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.number {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.architecture {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 15px;
+  padding: 25px;
+  text-align: center;
+  margin: 30px 0;
+}
+
+.arch-node {
+  background: white;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  padding: 15px;
+  margin: 8px auto;
+  max-width: 520px;
+  font-weight: 650;
+}
+
+.arch-node small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.arrow {
+  color: var(--primary);
+  font-size: 23px;
+  line-height: 1.4;
+}
+
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 750px;
+  margin: 15px auto;
+}
+
+.server {
+  background: white;
+  border: 1px solid #cbd5e1;
+  padding: 15px 8px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.server small {
+  display: block;
+  color: var(--muted);
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+}
+
+pre {
+  background: var(--code);
+  color: #dbeafe;
+  padding: 22px;
+  border-radius: 12px;
+  overflow-x: auto;
+  line-height: 1.65;
+  font-size: 13px;
+  margin: 20px 0;
+}
+
+pre code {
+  color: inherit;
+}
+
+.callout {
+  background: #ecfdf5;
+  border-left: 4px solid #059669;
+  padding: 18px 22px;
+  margin: 25px 0;
+  border-radius: 5px;
+}
+
+.info {
+  background: #eff6ff;
+  border-left: 4px solid var(--primary);
+  padding: 18px 22px;
+  margin: 25px 0;
+  border-radius: 5px;
+}
+
+.flow {
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  margin: 25px 0;
+}
+
+.flow-step {
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 7px;
+  text-align: center;
+  font-weight: 600;
+  margin: 5px 0;
+}
+
+.flow-arrow {
+  text-align: center;
+  color: var(--primary);
+  font-size: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 25px 0;
+  background: white;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background: #f1f5f9;
+}
+
+blockquote {
+  border-left: 4px solid var(--primary);
+  margin: 30px 0;
+  padding: 15px 22px;
+  background: #eff6ff;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+footer {
+  margin-top: 70px;
+  border-top: 1px solid var(--border);
+  padding-top: 25px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .components {
+    grid-template-columns: 1fr;
+  }
+
+  .server-grid {
+    grid-template-columns: 1fr;
+  }
+
+  h2 {
+    font-size: 25px;
+  }
+
+  .container {
+    padding: 20px 17px 50px;
+  }
+}
+</style>
+</head>
+
+<body>
+<main class="container">
+
+<header>
+  <div class="tag">Artificial Intelligence · MCP · Architecture</div>
+
+  <h1>Understanding MCP Architecture: How AI Assistants, LLMs, MCP Clients, and MCP Servers Work Together</h1>
+
+  <p class="subtitle">
+    A practical, beginner-friendly guide to understanding how
+    Model Context Protocol connects AI models with external tools,
+    APIs, databases, and applications.
+  </p>
+
+  <div class="meta">
+    Technical Guide · 12–15 min read
+  </div>
+</header>
+
+<section>
+<h2>Introduction: Understanding the Missing Connection</h2>
+
+<p>
+Model Context Protocol (MCP) is becoming an important part of
+the modern AI ecosystem. It provides a standardized way for
+AI applications to connect with external systems and use
+their capabilities.
+</p>
+
+<p>
+You might already understand what an AI assistant is, what an
+LLM does, how APIs work, and why external tools are useful.
+However, understanding how all these components communicate
+with one another is where things can become confusing.
+</p>
+
+<p>
+MCP architecture introduces four important components:
+</p>
+
+<div class="components">
+  <div class="component">
+    <span class="number">01</span>
+    <h3>AI Assistant</h3>
+    <p>The application through which users interact with AI.</p>
+  </div>
+
+  <div class="component">
+    <span class="number">02</span>
+    <h3>LLM</h3>
+    <p>The reasoning and language-generation engine.</p>
+  </div>
+
+  <div class="component">
+    <span class="number">03</span>
+    <h3>MCP Client</h3>
+    <p>Communicates with MCP servers and executes tool requests.</p>
+  </div>
+
+  <div class="component">
+    <span class="number">04</span>
+    <h3>MCP Server</h3>
+    <p>Exposes tools and capabilities to AI applications.</p>
+  </div>
+</div>
+
+<p>
+Let's understand how these four components work together
+using a real-world example.
+</p>
+</section>
+
+<section>
+<h2>1. Understanding the Four Components</h2>
+
+<h3>1. AI Assistant or Chatbot</h3>
+
+<p>
+The AI assistant is the application that users interact with.
+Examples include ChatGPT, Claude, and other AI-powered
+applications.
+</p>
+
+<p>
+It receives user questions, manages conversation context,
+communicates with the LLM, and coordinates tool execution.
+In MCP terminology, this application is called the
+<strong>MCP Host</strong>.
+</p>
+
+<h3>2. Large Language Model (LLM)</h3>
+
+<p>
+The LLM is the intelligence behind the assistant. It
+understands natural language, interprets user intent,
+determines whether external information is required,
+and selects appropriate tools when they are available.
+</p>
+
+<p>
+An important distinction: the LLM does not normally
+communicate directly with an MCP server. The host application
+coordinates communication between them.
+</p>
+
+<h3>3. MCP Client</h3>
+
+<p>
+The MCP client is the communication layer between the host
+application and an MCP server.
+</p>
+
+<p>
+It establishes a connection, discovers available tools,
+sends tool requests, and receives results.
+</p>
+
+<p>
+Typically, an MCP host creates a separate client connection
+for each MCP server.
+</p>
+
+<h3>4. MCP Server</h3>
+
+<p>
+An MCP server is a program that exposes capabilities through
+the MCP protocol. These capabilities can include tools,
+resources, and prompts.
+</p>
+
+<p>
+An MCP server might connect to a weather API, a stock market
+API, a database, a local filesystem, or another application.
+</p>
+
+<div class="info">
+  <strong>Important:</strong> An MCP server does not
+  necessarily contain the actual data. It can act as an
+  adapter that retrieves information from an external API
+  or system.
+</div>
+</section>
+
+<section>
+<h2>2. How Are These Four Components Connected?</h2>
+
+<p>
+The AI assistant acts as the host and coordinates the
+entire process. The LLM makes decisions, while MCP clients
+communicate with their respective servers.
+</p>
+
+<div class="architecture">
+  <div class="arch-node">
+    AI ASSISTANT / MCP HOST
+    <small>Chat interface and application logic</small>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="arch-node">
+    LLM
+    <small>Understands requests and selects tools</small>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <div class="arch-node">
+    MCP CLIENTS
+    <small>Connect to MCP servers and route tool calls</small>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="server-grid">
+    <div class="server">
+      Weather MCP
+      <small>Weather tools</small>
+    </div>
+    <div class="server">
+      Finance MCP
+      <small>Stock tools</small>
+    </div>
+    <div class="server">
+      Movies MCP
+      <small>Movie tools</small>
+    </div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="arch-node">
+    EXTERNAL SYSTEMS
+    <small>APIs · Databases · Local Files · Applications</small>
+  </div>
+</div>
+
+<p>
+The LLM and MCP clients are coordinated by the host
+application. The diagram is conceptual: actual implementations
+may have multiple clients and additional orchestration logic.
+</p>
+</section>
+
+<section>
+<h2>3. Let's Follow a Real Question: What Is the Temperature in Lucknow?</h2>
+
+<p>
+Imagine asking an AI assistant:
+</p>
+
+<blockquote>
+What is the current temperature in Lucknow?
+</blockquote>
+
+<p>
+Assume that the application has a Weather MCP server
+connected to a weather API.
+</p>
+
+<h3>Step 1: The User Asks a Question</h3>
+
+<p>
+The chatbot receives the question and sends the user's
+message, along with relevant conversation context, to the LLM.
+</p>
+
+<pre><code>What is the current temperature in Lucknow?</code></pre>
+
+<p>
+At this point, the weather API has not necessarily been called.
+</p>
+
+<h3>Step 2: The LLM Identifies the Required Tool</h3>
+
+<p>
+The LLM has access to descriptions of the available tools.
+For example, the Weather MCP server exposes the following tool:
+</p>
+
+<pre><code>{
+  "name": "get_weather",
+  "description": "Get current weather for a city",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string"
+      }
+    },
+    "required": ["city"]
+  }
+}</code></pre>
+
+<p>
+The LLM understands that current weather information
+requires an external data source.
+</p>
+
+<p>
+It selects the <code>get_weather</code> tool and prepares
+the required argument.
+</p>
+
+<pre><code>{
+  "tool": "get_weather",
+  "arguments": {
+    "city": "Lucknow"
+  }
+}</code></pre>
+
+<p>
+This is a tool-call decision, not the actual weather result.
+The LLM has decided what needs to happen, but it has not
+retrieved the temperature itself.
+</p>
+
+<h3>Step 3: The Host Routes the Tool Request</h3>
+
+<p>
+The host application receives the LLM's tool-call decision.
+It identifies which MCP client is connected to the server
+that provides <code>get_weather</code>.
+</p>
+
+<p>
+The MCP client then sends an MCP request to the Weather
+MCP server.
+</p>
+
+<pre><code>{
+  "jsonrpc": "2.0",
+  "id": 12,
+  "method": "tools/call",
+  "params": {
+    "name": "get_weather",
+    "arguments": {
+      "city": "Lucknow"
+    }
+  }
+}</code></pre>
+
+<p>
+This is a JSON-RPC message following the MCP protocol.
+</p>
+
+<h3>Step 4: The MCP Server Executes the Tool</h3>
+
+<p>
+The Weather MCP server receives the request and executes
+the corresponding function.
+</p>
+
+<p>
+Internally, its implementation might look like this:
+</p>
+
+<pre><code>def get_weather(city):
+
+    response = requests.get(
+        "https://weather-api.example.com/current",
+        params={"city": city}
+    )
+
+    return response.json()</code></pre>
+
+<p>
+The server calls the external weather API, which might
+return the following response:
+</p>
+
+<pre><code>{
+  "city": "Lucknow",
+  "temperature": 29,
+  "condition": "Cloudy",
+  "humidity": 65
+}</code></pre>
+
+<p>
+The MCP server converts the result into an MCP tool
+response and sends it back to the MCP client.
+</p>
+
+<h3>Step 5: The Result Returns to the LLM</h3>
+
+<p>
+The result travels back through the same connection:
+</p>
+
+<div class="flow">
+  <div class="flow-step">Weather API</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">Weather MCP Server</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">MCP Client</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">AI Assistant / Host</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">LLM</div>
+</div>
+
+<p>
+The host provides the tool result to the LLM as additional
+conversation context.
+</p>
+
+<p>
+The LLM now has access to the actual weather information
+and can generate a meaningful response.
+</p>
+
+<h3>Step 6: The AI Assistant Displays the Final Answer</h3>
+
+<p>
+The LLM generates a natural-language response:
+</p>
+
+<div class="callout">
+  The current temperature in Lucknow is 29°C, with cloudy
+  conditions and 65% humidity.
+</div>
+
+<p>
+The chatbot displays this answer to the user.
+</p>
+</section>
+
+<section>
+<h2>4. How Does the AI Decide Which MCP Server to Call?</h2>
+
+<p>
+This is one of the most important concepts in MCP architecture.
+</p>
+
+<p>
+Imagine that an AI application has connected five MCP servers:
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>MCP Server</th>
+  <th>Available Tools</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Weather</td>
+  <td>get_weather, get_forecast</td>
+</tr>
+<tr>
+  <td>Finance</td>
+  <td>get_stock_price, get_company_info</td>
+</tr>
+<tr>
+  <td>Movies</td>
+  <td>search_movies, get_release_date</td>
+</tr>
+<tr>
+  <td>Filesystem</td>
+  <td>read_file, list_directory</td>
+</tr>
+<tr>
+  <td>Database</td>
+  <td>execute_sql, get_schema</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Who decides that a weather question should go to the
+Weather MCP server instead of the Finance MCP server?
+</p>
+
+<p>
+Typically, the LLM selects the appropriate tool, while
+the host application handles the routing and execution.
+</p>
+
+<h3>Step 1: MCP Clients Discover Available Tools</h3>
+
+<p>
+When an MCP client connects to a server, it can request
+the list of tools supported by that server using
+<code>tools/list</code>.
+</p>
+
+<pre><code>Weather MCP Client
+       |
+       | tools/list
+       v
+Weather MCP Server
+       |
+       | Returns:
+       | get_weather
+       | get_forecast
+       v
+Weather MCP Client</code></pre>
+
+<p>
+The Finance MCP server might return
+<code>get_stock_price</code> and
+<code>get_company_info</code>.
+</p>
+
+<h3>Step 2: The Host Makes Tool Definitions Available to the LLM</h3>
+
+<p>
+The host application collects tool definitions from
+its connected MCP clients and makes the relevant tools
+available to the LLM.
+</p>
+
+<pre><code>Available tools:
+
+1. get_weather(city)
+   Description: Get current weather for a city.
+
+2. get_stock_price(symbol)
+   Description: Get the latest stock price.
+
+3. search_movies(query)
+   Description: Search for movies.
+
+4. read_file(path)
+   Description: Read a local file.</code></pre>
+
+<p>
+The LLM does not need to know how the internal code
+of every MCP server works.
+</p>
+
+<p>
+It needs to understand the tool descriptions, their
+input parameters, and what each tool is intended to do.
+</p>
+
+<h3>Step 3: The LLM Selects the Appropriate Tool</h3>
+
+<div class="component">
+  <strong>Question:</strong> What is the temperature in Lucknow?
+  <p>Selected tool: <code>get_weather(city="Lucknow")</code></p>
+</div>
+
+<div class="component">
+  <strong>Question:</strong> What is the current share price of Infosys?
+  <p>Selected tool: <code>get_stock_price(symbol="INFY")</code></p>
+</div>
+
+<div class="component">
+  <strong>Question:</strong> Which movies were released this week?
+  <p>Selected tool: <code>search_movies(query="recent releases")</code></p>
+</div>
+
+<p>
+The LLM uses its language understanding and the available
+tool descriptions to select the appropriate tool.
+</p>
+
+<div class="callout">
+  <strong>Important:</strong> The LLM generally performs
+  model-driven tool selection. The MCP protocol itself
+  does not magically understand the user's question and
+  choose a server.
+</div>
+</section>
+
+<section>
+<h2>5. How Does the Host Know Which Client to Use?</h2>
+
+<p>
+There is an important distinction between tool selection
+and tool routing.
+</p>
+
+<p>
+The LLM selects the tool. The host application knows
+which MCP client is connected to the server that provides
+that tool.
+</p>
+
+<p>
+For example, the host might maintain an internal registry:
+</p>
+
+<pre><code>tool_registry = {
+    "get_weather": weather_client,
+    "get_stock_price": finance_client,
+    "search_movies": movies_client,
+    "read_file": filesystem_client
+}</code></pre>
+
+<p>
+When the LLM selects <code>get_stock_price</code>,
+the host can route the request as follows:
+</p>
+
+<pre><code>client = tool_registry["get_stock_price"]
+
+result = await client.call_tool(
+    "get_stock_price",
+    {"symbol": "INFY"}
+)</code></pre>
+
+<p>
+The Finance MCP client communicates with its connected
+Finance MCP server.
+</p>
+
+<p>
+This registry is an illustrative implementation.
+The MCP protocol does not prescribe one specific
+internal registry design.
+</p>
+</section>
+
+<section>
+<h2>6. What Happens When There Are 100 MCP Servers and 1,000 Tools?</h2>
+
+<p>
+A real-world AI application might have access to hundreds
+of MCP servers and thousands of tools.
+</p>
+
+<p>
+Sending every available tool description to the LLM
+for every request can be inefficient. It increases token
+usage and consumes context.
+</p>
+
+<p>
+There are several ways to manage this situation.
+</p>
+
+<h3>Approach 1: Expose All Available Tools</h3>
+
+<p>
+The application provides all available tool definitions
+to the LLM. The model selects the appropriate tool.
+</p>
+
+<p>
+This is straightforward but can become expensive when
+the number of tools grows.
+</p>
+
+<h3>Approach 2: Filter Tools Before Sending Them to the LLM</h3>
+
+<p>
+The host application can filter tools using categories,
+user permissions, application context, or semantic search.
+</p>
+
+<p>
+For example, if a user is working inside a database IDE,
+the host might prioritize database and SQL tools.
+</p>
+
+<h3>Approach 3: Progressive Tool Discovery</h3>
+
+<p>
+Instead of exposing all tools immediately, the application
+can initially expose a smaller discovery tool.
+</p>
+
+<p>
+For example:
+</p>
+
+<pre><code>search_available_tools(query)</code></pre>
+
+<p>
+The LLM might request:
+</p>
+
+<pre><code>{
+  "query": "Find the current stock price of Infosys"
+}</code></pre>
+
+<p>
+The application searches its tool registry and discovers
+a suitable tool:
+</p>
+
+<pre><code>get_stock_price(symbol)</code></pre>
+
+<p>
+It can then make that tool available to the LLM for
+execution.
+</p>
+
+<div class="info">
+  Progressive tool discovery helps applications manage
+  large tool collections without overwhelming the model
+  with every tool definition at once.
+</div>
+</section>
+
+<section>
+<h2>7. Does an MCP Server Always Need an API?</h2>
+
+<p>
+No. An MCP server is an adapter between an AI application
+and a capability or data source.
+</p>
+
+<div class="architecture">
+  <div class="arch-node">
+    MCP SERVER
+    <small>Exposes tools through MCP</small>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="server-grid">
+    <div class="server">REST API</div>
+    <div class="server">SQL Database</div>
+    <div class="server">Local Files</div>
+    <div class="server">Python Functions</div>
+    <div class="server">Browser Automation</div>
+    <div class="server">Other Systems</div>
+  </div>
+</div>
+
+<p>
+For example:
+</p>
+
+<ul>
+  <li>A Weather MCP server can call a weather API.</li>
+  <li>A Database MCP server can execute SQL queries.</li>
+  <li>A Filesystem MCP server can read local files.</li>
+  <li>A custom MCP server can execute Python functions.</li>
+</ul>
+
+<p>
+The MCP protocol standardizes how the AI application
+discovers and invokes these capabilities.
+</p>
+</section>
+
+<section>
+<h2>8. The Entire MCP Request-Response Cycle</h2>
+
+<p>
+Let's put everything together in one sequence.
+</p>
+
+<div class="flow">
+  <div class="flow-step">1. User asks a question</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">2. AI Assistant sends context to the LLM</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">3. LLM selects an appropriate tool</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">4. Host identifies the relevant MCP client</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">5. MCP Client sends tools/call</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">6. MCP Server executes the tool</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">7. External system returns data</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">8. Result returns through MCP Client</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">9. Host sends tool result to the LLM</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">10. LLM generates the final response</div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-step">11. AI Assistant displays the answer</div>
+</div>
+</section>
+
+<section>
+<h2>9. The Most Important Concepts to Remember</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Component</th>
+  <th>Primary Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>AI Assistant / Host</td>
+  <td>Manages conversation and coordinates execution.</td>
+</tr>
+<tr>
+  <td>LLM</td>
+  <td>Understands intent and selects appropriate tools.</td>
+</tr>
+<tr>
+  <td>MCP Client</td>
+  <td>Discovers tools and communicates with MCP servers.</td>
+</tr>
+<tr>
+  <td>MCP Server</td>
+  <td>Exposes and executes capabilities.</td>
+</tr>
+<tr>
+  <td>External System</td>
+  <td>Provides actual information or performs an operation.</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+The LLM decides what needs to be done. The MCP client
+transports the request. The MCP server does the actual
+work. The LLM interprets the result and explains it to
+the user.
+</blockquote>
+</section>
+
+<section>
+<h2>10. What's the Best Way to Learn MCP Further?</h2>
+
+<p>
+Once you understand the architecture, the next logical
+step is to explore it through actual Python code.
+</p>
+
+<p>
+A useful learning project is to build a Weather MCP server
+and connect it to an LLM.
+</p>
+
+<ol>
+  <li>Build a Weather MCP server.</li>
+  <li>Create a <code>get_weather()</code> tool.</li>
+  <li>Define the tool's input schema.</li>
+  <li>Connect the MCP client to the server.</li>
+  <li>Execute <code>tools/list</code> to discover available tools.</li>
+  <li>Pass the tool definitions to an LLM.</li>
+  <li>Execute the tool call selected by the LLM.</li>
+  <li>Send the result back to the LLM.</li>
+  <li>Generate the final response.</li>
+</ol>
+
+<p>
+Tracing this complete flow in code will help you understand
+not just what MCP is, but how it actually works internally.
+</p>
+</section>
+
+<section>
+<h2>Official Resources</h2>
+
+<ul>
+  <li>
+    <a href="https://modelcontextprotocol.io/docs/learn/architecture"
+       target="_blank" rel="noopener">
+      MCP Architecture Overview
+    </a>
+  </li>
+  <li>
+    <a href="https://modelcontextprotocol.io/docs"
+       target="_blank" rel="noopener">
+      Official MCP Documentation
+    </a>
+  </li>
+  <li>
+    <a href="https://modelcontextprotocol.io/specification"
+       target="_blank" rel="noopener">
+      MCP Protocol Specification
+    </a>
+  </li>
+</ul>
+</section>
+
+<footer>
+  <p>
+    Understanding MCP Architecture
+    <br>
+    A practical guide to AI assistants, LLMs, MCP clients,
+    MCP servers, and tool execution.
+  </p>
+</footer>
+
+</main>
+</body>
+</html>
